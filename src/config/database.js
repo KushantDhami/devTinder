@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 
 const connectDB = async ()=>{
-     await mongoose.connect("mongodb+srv://kushantdhami:devtinder@cluster0.7ieygp7.mongodb.net/devtinder")
+     await mongoose.connect("YOUR API OF MONGOATLASS")
 } 
 
 module.exports = connectDB
