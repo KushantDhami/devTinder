@@ -21,8 +21,54 @@ app.post("/signup",async (req,res)=>{
   }
 })
 
+app.get("/feed",async (req,res)=>{
+  try{
+    const users = await User.find({});
+    res.send(users)
+  }
+  catch(err)
+  {
+    res.status(400).send("Something went wrong",err)
+  }
+})
 
+app.get("/user",async (req,res)=>{
+  try{
+    const userEmail = req.body.emailId
+    const user = await User.findOne({emailId : userEmail})
+    res.send(user)
+  }
+  catch(err)
+  {
+    res.status(400).send("Something went wrong",err)
+  }
+})
 
+app.delete("/user",async (req,res)=>{
+  try{
+    const userId = req.body.userId
+    await User.findByIdAndDelete(userId)
+    res.send("User Deleted Successfully ")
+  }
+  catch(err)
+  {
+    res.status(400).send("Something went wrong",err)
+  }
+})
+
+app.patch("/user",async (req,res)=>{
+  try{
+    const userId = req.body.userId
+    const data = req.body
+   
+    const update = await User.findOneAndUpdate({_id:userId},data)
+    res.send("Data Updated Successfully \n" + update)
+  }
+  catch(err)
+  {
+    res.status(400).send("Something went wrong",err)
+  }
+})
 
 connectDB().then(()=>{
     console.log("Database Connected Successfully ")
