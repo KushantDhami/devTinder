@@ -5,7 +5,7 @@ const app = express();
 const PORT = 7777;
 
 app.use(express.json())
-
+  
 app.post("/signup",async (req,res)=>{
   console.log(req.body)
   const data = req.body
