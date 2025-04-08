@@ -7,7 +7,6 @@ const PORT = 7777;
 app.use(express.json())
   
 app.post("/signup",async (req,res)=>{
-  console.log(req.body)
   const data = req.body
   const user = new User(data)
   try{
@@ -16,8 +15,7 @@ app.post("/signup",async (req,res)=>{
   }
   catch(err)
   {
-    console.log("Error in saving data ",err.message)
-    res.status(400).send("Error in saving data")
+    res.status(400).send("Error in saving data "+err.message)
   }
 })
 
@@ -28,7 +26,7 @@ app.get("/feed",async (req,res)=>{
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong",err)
+    res.status(400).send("Something went wrong" + err)
   }
 })
 
@@ -40,7 +38,7 @@ app.get("/user",async (req,res)=>{
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong",err)
+    res.status(400).send("Something went wrong" + err)
   }
 })
 
@@ -52,22 +50,39 @@ app.delete("/user",async (req,res)=>{
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong",err)
+    res.status(400).send("Something went wrong" + err)
   }
 })
 
-app.patch("/user",async (req,res)=>{
+app.patch("/user/:userId",async (req,res)=>{
   try{
-    const userId = req.body.userId
+    const userId = req.params?.userId
     const data = req.body
-   
-    const update = await User.findOneAndUpdate({_id:userId},data)
+
+    const ALLOWED_UPDATES = ["photoUrl","about","skills","password","age"]
+    const isUpdateAllowed = Object.keys(data).every((key)=>ALLOWED_UPDATES.includes(key))
+
+    if(!isUpdateAllowed)
+    {
+      throw new Error("Update Not Allowed")
+    }
+
+    if(data?.skills.length > 15)
+    {
+      throw new Error("Skills Length Exceeded")
+    }
+
+    const update = await User.findOneAndUpdate({_id:userId},data,{runValidators:true})
     res.send("Data Updated Successfully \n" + update)
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong",err)
+    res.status(400).send("Something went wrong" + err)
   }
+})
+
+app.get("/",(req,res)=>{
+  res.send("Hello World")
 })
 
 connectDB().then(()=>{
