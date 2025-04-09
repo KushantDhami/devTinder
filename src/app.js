@@ -1,83 +1,75 @@
 const express = require("express");
 const connectDB = require("./config/Database");
 const User = require("./models/user")
+const {ValidateSignUpData,ValidateLoginData} = require("./utils/validation")
+const bcrypt = require("bcrypt")
+const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken")
+const {userAuth} = require("./middleware/middleware") 
+
 const app = express();
 const PORT = 7777;
 
 app.use(express.json())
-  
+app.use(cookieParser())
+
 app.post("/signup",async (req,res)=>{
-  const data = req.body
-  const user = new User(data)
+  const {firstName, lastName, emailId, password} = req.body
+  const hashedPassword = await bcrypt.hash(password, 10)
+  const user = new User({
+    firstName,
+    lastName,
+    emailId,
+    password: hashedPassword
+  })
   try{
+    ValidateSignUpData(req)
     await user.save()
     res.send("Data saved successfully")
   }
-  catch(err)
+  catch(error)
   {
-    res.status(400).send("Error in saving data "+err.message)
+    res.status(400).send("Error : " + error.message)
   }
 })
 
-app.get("/feed",async (req,res)=>{
+app.post("/login", async (req,res)=>{
   try{
-    const users = await User.find({});
-    res.send(users)
+    const {emailId,password} = req.body;
+    ValidateLoginData(emailId)
+
+    const user = await User.findOne({emailId})
+    if(!user)
+    {
+      throw new Error("Invalid credentials")
+    }
+
+    const isValidPassword = await bcrypt.compare(password,user.password)
+    if(isValidPassword)
+    {
+      const token = await jwt.sign({_id:user._id},process.env.JWT_SECRET_KEY,{expiresIn:"7d"})
+      res.cookie("token",token)
+      res.send("Login successfully")
+    }
+    else
+    {
+      throw new Error("Invalid credentials")
+    }
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong" + err)
+    res.status(400).send("Something went wrong " + err)
   }
 })
 
-app.get("/user",async (req,res)=>{
-  try{
-    const userEmail = req.body.emailId
-    const user = await User.findOne({emailId : userEmail})
+app.get("/profile",userAuth,async (req,res)=>{
+  try{   
+    const user = req.user
     res.send(user)
   }
   catch(err)
   {
-    res.status(400).send("Something went wrong" + err)
-  }
-})
-
-app.delete("/user",async (req,res)=>{
-  try{
-    const userId = req.body.userId
-    await User.findByIdAndDelete(userId)
-    res.send("User Deleted Successfully ")
-  }
-  catch(err)
-  {
-    res.status(400).send("Something went wrong" + err)
-  }
-})
-
-app.patch("/user/:userId",async (req,res)=>{
-  try{
-    const userId = req.params?.userId
-    const data = req.body
-
-    const ALLOWED_UPDATES = ["photoUrl","about","skills","password","age"]
-    const isUpdateAllowed = Object.keys(data).every((key)=>ALLOWED_UPDATES.includes(key))
-
-    if(!isUpdateAllowed)
-    {
-      throw new Error("Update Not Allowed")
-    }
-
-    if(data?.skills.length > 15)
-    {
-      throw new Error("Skills Length Exceeded")
-    }
-
-    const update = await User.findOneAndUpdate({_id:userId},data,{runValidators:true})
-    res.send("Data Updated Successfully \n" + update)
-  }
-  catch(err)
-  {
-    res.status(400).send("Something went wrong" + err)
+    res.status(400).send("Something went wrong : " + err.message)
   }
 })
 

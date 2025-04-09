@@ -1,29 +1,35 @@
+const jwt = require("jsonwebtoken")
+const User = require("../models/user")
+
 const adminAuth = (req,res,next)=>{
-    console.log("Middleware for admin authorization")
-    const token = "xyz"
-    const auth = token === "xyz"
-    if(!auth) 
-    {
-        res.status(404).send("you are not authorized")
-    }
-    else
-    {
-        next()
-    }
+    
 }
 
-const userAuth = (req,res,next)=>{
-    console.log("Middleware for User authorization")
-    const token = "xyz"
-    const auth = token === "xyz"
-    if(!auth) 
-    {
-        res.status(404).send("you are not authorized")
+const userAuth = async (req,res,next)=>{
+    try{
+        const cookies = req.cookies
+        const token = cookies.token 
+        
+        if(!token)
+        {
+            throw new Error("Token does not exist")
+        }   
+
+            const decodedMessage = await jwt.verify(token,process.env.JWT_SECRET_KEY)
+
+            const user = await User.findById(decodedMessage._id)
+            if(!user)
+            {
+                throw new Error("User not found")
+            }
+            req.user = user
+            next()
     }
-    else
+    catch(err)
     {
-        next()
+        res.status(400).send("Error : " + err.message)
     }
+
 }
 
 module.exports = {
