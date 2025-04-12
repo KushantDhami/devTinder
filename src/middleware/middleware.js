@@ -1,10 +1,6 @@
 const jwt = require("jsonwebtoken")
 const User = require("../models/user")
 
-const adminAuth = (req,res,next)=>{
-    
-}
-
 const userAuth = async (req,res,next)=>{
     try{
         const cookies = req.cookies
@@ -12,7 +8,7 @@ const userAuth = async (req,res,next)=>{
         
         if(!token)
         {
-            throw new Error("Token does not exist")
+            throw new Error("Please Login to continue  (Token does not found) ")
         }   
 
             const decodedMessage = await jwt.verify(token,process.env.JWT_SECRET_KEY)
@@ -33,6 +29,5 @@ const userAuth = async (req,res,next)=>{
 }
 
 module.exports = {
-    adminAuth,
     userAuth
 }
